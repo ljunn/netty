@@ -28,110 +28,100 @@ import java.net.SocketAddress;
 
 
 /**
- * A nexus to a network socket or a component which is capable of I/O
- * operations such as read, write, connect, and bind.
+ * 与网络套接字或者能够读、写、连接、绑定等IO操作组件的连接。
  * <p>
- * A channel provides a user:
+ * Channel提供的功能：
  * <ul>
- * <li>the current state of the channel (e.g. is it open? is it connected?),</li>
- * <li>the {@linkplain ChannelConfig configuration parameters} of the channel (e.g. receive buffer size),</li>
- * <li>the I/O operations that the channel supports (e.g. read, write, connect, and bind), and</li>
- * <li>the {@link ChannelPipeline} which handles all I/O events and requests
- *     associated with the channel.</li>
+ * <li>当前Channel的状态（如是否连接）</li>
+ * <li> Channel的{@linkplain ChannelConfig 配置参数} (如. 接受区缓存大小),</li>
+ * <li>Channel提供的IO操作 (e.g. 读, 写, 连接, 和 绑定), and</li>
+ * <li>管道 {@link ChannelPipeline} 处理所有的IO事件 并且 请求连接通道</li>
  * </ul>
  *
- * <h3>All I/O operations are asynchronous.</h3>
+ * <h3>所有的IO操作都是异步的</h3>
  * <p>
- * All I/O operations in Netty are asynchronous.  It means any I/O calls will
- * return immediately with no guarantee that the requested I/O operation has
- * been completed at the end of the call.  Instead, you will be returned with
- * a {@link ChannelFuture} instance which will notify you when the requested I/O
- * operation has succeeded, failed, or canceled.
+ * Netty中所有的IO操作都是异步的。
+ * 这意味着所有的IO操作都会立即返回，但是不保证返回时IO操作已经结束。
+ * 相反, 将会返回一个实例
+ *  {@link ChannelFuture} ，该实例将在请求的IO操作成功、失败或者取消时通知您。
  *
- * <h3>Channels are hierarchical</h3>
+ * <h3>Channels 是分层次的。</h3>
  * <p>
- * A {@link Channel} can have a {@linkplain #parent() parent} depending on
- * how it was created.  For instance, a {@link SocketChannel}, that was accepted
- * by {@link ServerSocketChannel}, will return the {@link ServerSocketChannel}
- * as its parent on {@link #parent()}.
+ * 一个 {@link Channel} 可以拥有一个 {@linkplain #parent() parent} 父类， 这取决于他是如何创建的。
+ * 比如, 一个 {@link SocketChannel}, 绑定在 {@link ServerSocketChannel},
+ * 将会把 {@link ServerSocketChannel} 当成父Channel {@link #parent()}.
  * <p>
- * The semantics of the hierarchical structure depends on the transport
- * implementation where the {@link Channel} belongs to.  For example, you could
- * write a new {@link Channel} implementation that creates the sub-channels that
- * share one socket connection, as <a href="http://beepcore.org/">BEEP</a> and
+ * Channel的层次结构取决于Channel的传输实现。
+ * 比如, 你可以写一个新的 {@link Channel} 实现，创建新的子Channel并且分享连接
+ * as <a href="http://beepcore.org/">BEEP</a> and
  * <a href="https://en.wikipedia.org/wiki/Secure_Shell">SSH</a> do.
  *
- * <h3>Downcast to access transport-specific operations</h3>
+ * <h3> 子类型实现特定操作 </h3>
  * <p>
- * Some transports exposes additional operations that is specific to the
- * transport.  Down-cast the {@link Channel} to sub-type to invoke such
- * operations.  For example, with the old I/O datagram transport, multicast
- * join / leave operations are provided by {@link DatagramChannel}.
+ *  有些IO需要特定的操作，可以实现子类去调用特定操作。
+ *  比如IO的数据结构, 实现 {@link DatagramChannel}.
  *
- * <h3>Release resources</h3>
+ * <h3>释放资源</h3>
  * <p>
- * It is important to call {@link #close()} or {@link #close(ChannelPromise)} to release all
- * resources once you are done with the {@link Channel}. This ensures all resources are
- * released in a proper way, i.e. filehandles.
+ * 当你结束使用{@link Channel}时， 调用 {@link #close()} 或者 {@link #close(ChannelPromise)}  去释放资源非常重要。
+ * 它确保你正确释放了资源。 如 filehandles
  */
 public interface Channel extends AttributeMap, ChannelOutboundInvoker, Comparable<Channel> {
 
     /**
-     * Returns the globally unique identifier of this {@link Channel}.
+     * 返回全局唯一标识 {@link Channel}.
      */
     ChannelId id();
 
     /**
-     * Return the {@link EventLoop} this {@link Channel} was registered to.
+     * 返回这个Channel注册的事件循环 {@link EventLoop}
      */
     EventLoop eventLoop();
 
     /**
-     * Returns the parent of this channel.
+     * 返回当前Channel的父容器
      *
      * @return the parent channel.
-     *         {@code null} if this channel does not have a parent channel.
+     *         {@code null} 没有父容器则返回空
      */
     Channel parent();
 
     /**
-     * Returns the configuration of this channel.
+     * 返回当前Channel的配置信息
      */
     ChannelConfig config();
 
     /**
-     * Returns {@code true} if the {@link Channel} is open and may get active later
+     * 返回当前Channel是否打开，或者即将打开。
      */
     boolean isOpen();
 
     /**
-     * Returns {@code true} if the {@link Channel} is registered with an {@link EventLoop}.
+     * 返回当前Channel是否注册了EvenLoop
      */
     boolean isRegistered();
 
     /**
-     * Return {@code true} if the {@link Channel} is active and so connected.
+     * 返回当前Channel是否活跃
      */
     boolean isActive();
 
     /**
-     * Return the {@link ChannelMetadata} of the {@link Channel} which describe the nature of the {@link Channel}.
+     * 返回Channel元数据 {@link ChannelMetadata}  which describe the nature of the {@link Channel}.
      */
     ChannelMetadata metadata();
 
     /**
-     * Returns the local address where this channel is bound to.  The returned
-     * {@link SocketAddress} is supposed to be down-cast into more concrete
-     * type such as {@link InetSocketAddress} to retrieve the detailed
-     * information.
+     * 返回Channel绑定的本地地址.
+     * {@link SocketAddress} 这个类可以用各种子类实现如{@link InetSocketAddress}来保持详细数据。
      *
-     * @return the local address of this channel.
+     * @return Channel本地地址.
      *         {@code null} if this channel is not bound.
      */
     SocketAddress localAddress();
 
     /**
-     * Returns the remote address where this channel is connected to.  The
+     * 返回当前Channel连接的远程地址。  The
      * returned {@link SocketAddress} is supposed to be down-cast into more
      * concrete type such as {@link InetSocketAddress} to retrieve the detailed
      * information.
@@ -147,43 +137,39 @@ public interface Channel extends AttributeMap, ChannelOutboundInvoker, Comparabl
     SocketAddress remoteAddress();
 
     /**
-     * Returns the {@link ChannelFuture} which will be notified when this
-     * channel is closed.  This method always returns the same future instance.
+     * 返回 {@link ChannelFuture} ，当channel被关闭时返回数据。
+     * 这个方法总是会返回同一个Future实例。
      */
     ChannelFuture closeFuture();
 
     /**
-     * Returns {@code true} if and only if the I/O thread will perform the
-     * requested write operation immediately.  Any write requests made when
-     * this method returns {@code false} are queued until the I/O thread is
-     * ready to process the queued write requests.
+     * 只会在IO线程立即响应写请求时返回 {@code true}
      */
     boolean isWritable();
 
     /**
-     * Get how many bytes can be written until {@link #isWritable()} returns {@code false}.
-     * This quantity will always be non-negative. If {@link #isWritable()} is {@code false} then 0.
+     * 获取在isWritable返回false之前可以写入的字节数.
+     * 如果 {@link #isWritable()} 是 {@code false} 返回 0.
      */
     long bytesBeforeUnwritable();
 
     /**
-     * Get how many bytes must be drained from underlying buffers until {@link #isWritable()} returns {@code true}.
-     * This quantity will always be non-negative. If {@link #isWritable()} is {@code true} then 0.
+     * 获取必须从缓存区中释放多少字节
      */
     long bytesBeforeWritable();
 
     /**
-     * Returns an <em>internal-use-only</em> object that provides unsafe operations.
+     * 返回一个仅供内部使用的对象来支持不安全的操作
      */
     Unsafe unsafe();
 
     /**
-     * Return the assigned {@link ChannelPipeline}.
+     * 返回分配的管道 {@link ChannelPipeline}.
      */
     ChannelPipeline pipeline();
 
     /**
-     * Return the assigned {@link ByteBufAllocator} which will be used to allocate {@link ByteBuf}s.
+     * 返回分配的缓存区 {@link ByteBufAllocator} which will be used to allocate {@link ByteBuf}s.
      */
     ByteBufAllocator alloc();
 
